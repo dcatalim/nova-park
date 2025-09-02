@@ -15,6 +15,8 @@
 	import Chart from './Chart.svelte';
 
 	const today = new Date();
+	const localISO = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+
 	let voted = $state(false);
 	let loading = $state(false);
 	let status = $state<boolean | null>(null);
@@ -29,7 +31,7 @@
 		loading = true;
 		const data = {
 			is_open: isOpen,
-			today: today.toISOString().split('T')[0]
+			local_date: localISO.toISOString().split('T')[0]
 		};
 
 		if (!voted) {
@@ -57,11 +59,9 @@
 	}
 
 	const getParkStatus = async () => {
-		const today = new Date();
-
 		try {
 			const records = await pb.collection('park_status').getFullList({
-				filter: `created ~ "${today.toISOString().split('T')[0]}"`,
+				filter: `local_date ~ "${localISO.toISOString().split('T')[0]}"`,
 				sort: '-created'
 			});
 
@@ -299,41 +299,20 @@
 					</div>
 				</CardContent>
 			</Card>
+			{#if result?.records.length > 0}
+				<Card class="w-full">
+					<CardHeader>
+						<CardTitle>Today's Voting Timeline - Line Chart</CardTitle>
+						<CardDescription
+							>Showing when votes were cast throughout the day (24-hour format)</CardDescription
+						>
+					</CardHeader>
 
-			<!-- Location Card -->
-			<Card class="w-full">
-				<CardHeader>
-					<CardTitle class="flex items-center gap-2">📍 Park Location</CardTitle>
-					<CardDescription>The free parking area we're tracking</CardDescription>
-				</CardHeader>
-				<CardContent class="space-y-4">
-					<div class="aspect-video w-full overflow-hidden rounded-lg border">
-						<iframe
-							class="h-full w-full"
-							src="https://www.openstreetmap.org/export/embed.html?bbox=-9.326172173023226%2C38.680832277916885%2C-9.322631657123567%2C38.682708332524456&amp;layer=mapnik&amp;marker=38.681770311368325%2C-9.324401915073395"
-							style="border: 0;"
-							title="Nova SBE Free Park Location"
-						></iframe>
-					</div>
-					<div class="text-center text-sm text-muted-foreground">
-						<!-- Interactive map showing the exact location of the free parking area -->
-						Typical Hours: 8:00 - 19:30
-					</div>
-				</CardContent>
-			</Card>
-		</div>
+					<CardContent class="h-full content-center">
+						<Chart votes={result?.records} />
+					</CardContent>
 
-		<Card class="mt-8">
-			<CardHeader>
-				<CardTitle>Today's Voting Timeline - Line Chart</CardTitle>
-				<CardDescription>Showing when votes were cast throughout the day (24-hour format)</CardDescription>
-			</CardHeader>
-
-			<CardContent>
-				<Chart votes={result?.records} />
-			</CardContent>
-
-			<!-- <CardFooter>
+					<!-- <CardFooter>
 				<div class="flex w-full items-start gap-2 text-sm">
 					<div class="grid gap-2">
 						<div class="flex items-center gap-2 leading-none font-medium">
@@ -345,6 +324,30 @@
 					</div>
 				</div>
 			</CardFooter> -->
+				</Card>
+			{/if}
+		</div>
+
+		<!-- Location Card -->
+		<Card class="mt-8 w-full">
+			<CardHeader>
+				<CardTitle class="flex items-center gap-2">📍 Park Location</CardTitle>
+				<CardDescription>The free parking area we're tracking</CardDescription>
+			</CardHeader>
+			<CardContent class="space-y-4">
+				<div class="aspect-video w-full overflow-hidden rounded-lg border">
+					<iframe
+						class="h-full w-full"
+						src="https://www.openstreetmap.org/export/embed.html?bbox=-9.326172173023226%2C38.680832277916885%2C-9.322631657123567%2C38.682708332524456&amp;layer=mapnik&amp;marker=38.681770311368325%2C-9.324401915073395"
+						style="border: 0;"
+						title="Nova SBE Free Park Location"
+					></iframe>
+				</div>
+				<div class="text-center text-sm text-muted-foreground">
+					<!-- Interactive map showing the exact location of the free parking area -->
+					Typical Hours: 8:00 - 19:30
+				</div>
+			</CardContent>
 		</Card>
 
 		<!-- Info Section -->
