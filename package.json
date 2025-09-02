@@ -25,12 +25,15 @@
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
+		"@types/d3-scale": "^4.0.9",
+		"@types/d3-shape": "^3.1.7",
 		"bits-ui": "^2.9.4",
 		"clsx": "^2.1.1",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",
 		"globals": "^16.0.0",
+		"layerchart": "2.0.0-next.27",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
@@ -52,6 +55,9 @@
 		]
 	},
 	"dependencies": {
+		"d3": "^7.9.0",
+		"d3-scale": "^4.0.2",
+		"d3-shape": "^3.2.0",
 		"mode-watcher": "^1.1.0",
 		"pocketbase": "^0.26.2"
 	}

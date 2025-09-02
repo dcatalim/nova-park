@@ -12,15 +12,18 @@
 	import { pb } from '$lib/pocketbase.svelte';
 	import { toast } from 'svelte-sonner';
 	import { onMount, onDestroy } from 'svelte';
+	import Chart from './Chart.svelte';
 
 	const today = new Date();
 	let voted = $state(false);
 	let loading = $state(false);
 	let status = $state<boolean | null>(null);
 	let voteCount = $state({ open: 0, closed: 0 });
+	let weightedScores = $state({ open: 0, closed: 0 });
 	let autoRefresh = $state(false);
 	let refreshInterval = $state<number | null>(null);
 	let refreshLoading = $state(false);
+	let result = $state();
 
 	async function submitVote(isOpen: boolean) {
 		loading = true;
@@ -45,10 +48,11 @@
 		}
 		loading = false;
 
-		const result = await getParkStatus();
+		result = await getParkStatus();
 		if (result) {
 			status = result.status;
 			voteCount = result.votes;
+			weightedScores = result.weightedScores;
 		}
 	}
 
@@ -61,19 +65,50 @@
 				sort: '-created'
 			});
 
+			// Calculate weighted votes (newer votes have higher weight)
+			const now = new Date();
+			let weightedOpenScore = 0;
+			let weightedClosedScore = 0;
 			const openVotes = records.filter((record) => record.is_open).length;
 			const closedVotes = records.length - openVotes;
 
-			console.log('Fetched park status:', { openVotes, closedVotes });
+			records.forEach((record) => {
+				const voteTime = new Date(record.created);
+				const hoursAgo = (now.getTime() - voteTime.getTime()) / (1000 * 60 * 60);
 
-			const isOpen = openVotes > closedVotes;
+				// Weight formula: newer votes get higher weight
+				// Weight decreases exponentially: weight = 1 / (1 + hoursAgo * 0.5)
+				// This means votes from 1 hour ago have ~67% weight, 2 hours ago ~50% weight, etc.
+				const weight = 1 / (1 + hoursAgo * 0.5);
+
+				if (record.is_open) {
+					weightedOpenScore += weight;
+				} else {
+					weightedClosedScore += weight;
+				}
+			});
+
+			console.log('Fetched park status:', {
+				openVotes,
+				closedVotes,
+				weightedOpenScore: weightedOpenScore.toFixed(2),
+				weightedClosedScore: weightedClosedScore.toFixed(2)
+			});
+
+			// Determine status based on weighted scores
+			const isOpen = weightedOpenScore > weightedClosedScore;
 
 			return {
 				status: isOpen,
 				votes: {
 					open: openVotes,
 					closed: closedVotes
-				}
+				},
+				weightedScores: {
+					open: Math.round(weightedOpenScore * 100) / 100,
+					closed: Math.round(weightedClosedScore * 100) / 100
+				},
+				records
 			};
 		} catch (error) {
 			console.error('Error fetching park status:', error);
@@ -83,10 +118,11 @@
 
 	async function refreshStatus() {
 		refreshLoading = true;
-		const result = await getParkStatus();
+		result = await getParkStatus();
 		if (result) {
 			status = result.status;
 			voteCount = result.votes;
+			weightedScores = result.weightedScores;
 		}
 		refreshLoading = false;
 	}
@@ -109,10 +145,11 @@
 	}
 
 	onMount(async () => {
-		const result = await getParkStatus();
+		result = await getParkStatus();
 		if (result) {
 			status = result.status;
 			voteCount = result.votes;
+			weightedScores = result.weightedScores;
 		}
 	});
 
@@ -184,7 +221,9 @@
 							</div>
 						</div>
 					{:else}
-						<p class="text-sm text-muted-foreground font-semibold">No votes yet. Be the first to vote!</p>
+						<p class="text-sm font-semibold text-muted-foreground">
+							No votes yet. Be the first to vote!
+						</p>
 					{/if}
 
 					<Separator />
@@ -283,6 +322,30 @@
 				</CardContent>
 			</Card>
 		</div>
+
+		<Card class="mt-8">
+			<CardHeader>
+				<CardTitle>Today's Voting Timeline - Line Chart</CardTitle>
+				<CardDescription>Showing when votes were cast throughout the day (24-hour format)</CardDescription>
+			</CardHeader>
+
+			<CardContent>
+				<Chart votes={result?.records} />
+			</CardContent>
+
+			<!-- <CardFooter>
+				<div class="flex w-full items-start gap-2 text-sm">
+					<div class="grid gap-2">
+						<div class="flex items-center gap-2 leading-none font-medium">
+							Trending up by 5.2% this month <TrendingUpIcon class="size-4" />
+						</div>
+						<div class="flex items-center gap-2 leading-none text-muted-foreground">
+							January - June 2024
+						</div>
+					</div>
+				</div>
+			</CardFooter> -->
+		</Card>
 
 		<!-- Info Section -->
 		<Card class="mt-8">
