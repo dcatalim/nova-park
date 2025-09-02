@@ -183,6 +183,8 @@
 								</div>
 							</div>
 						</div>
+					{:else}
+						<p class="text-sm text-muted-foreground font-semibold">No votes yet. Be the first to vote!</p>
 					{/if}
 
 					<Separator />
@@ -274,9 +276,10 @@
 							title="Nova SBE Free Park Location"
 						></iframe>
 					</div>
-					<!-- <div class="text-center text-sm text-muted-foreground">
-						Interactive map showing the exact location of the free parking area
-					</div> -->
+					<div class="text-center text-sm text-muted-foreground">
+						<!-- Interactive map showing the exact location of the free parking area -->
+						Typical Hours: 8:00 - 19:30
+					</div>
 				</CardContent>
 			</Card>
 		</div>
