@@ -7,7 +7,12 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href='/favicon.png' />
+	<link rel="icon" href="/favicon.png" />
+	<script
+		defer
+		src="https://analytics.dcatalim.com/script.js"
+		data-website-id="6d764493-8168-4d30-bce3-a170916f131f"
+	></script>
 </svelte:head>
 
 <Toaster />
